@@ -775,6 +775,14 @@ alias -l DLF.Chan.Text {
 
   DLF.Custom.Filter $1-
   if ($hiswm(chantext.always,%txt)) DLF.Win.Filter $1-
+  if (%txt != $1-) {
+    if ($hiswm(chantext.fileserv,%txt)) DLF.Win.Filter $1-
+    if ($hiswm(chantext.trivia,%txt)) DLF.Win.Filter $1-
+    if (($space !isin %txt) && ($len(%txt) > 10) && ($left($right(%txt,2),1) == ?)) {
+      DLF.Watch.Log Obfuscated trivia question
+      DLF.Win.Filter $1-
+    }
+  }
   if ((%DLF.filter.ads == 1) && ($hiswm(chantext.spam,%txt))) DLF.Win.Filter $1-
   if ((%DLF.filter.ads == 1) && ($hiswm(chantext.ads,%txt))) DLF.Win.Ads $1-
   /*if (%DLF.filter.spamchan == 1) {
@@ -791,6 +799,7 @@ alias -l DLF.Chan.Action {
   var %txt $DLF.strip($1-)
   if ((%DLF.filter.ads == 1) && ($hiswm(chanaction.spam,%txt))) DLF.Win.Filter $1-
   if ((%DLF.filter.aways == 1) && ($hiswm(chanaction.away,%txt))) DLF.Win.Filter $1-
+  if ((%txt != $1-) && ($hiswm(chanaction.trivia,%txt))) DLF.Win.Filter $1-
   DLF.Chan.ControlCodes $1-
 }
 
@@ -799,6 +808,7 @@ alias -l DLF.Chan.Notice {
   DLF.Custom.Filter $1-
   var %txt $DLF.strip($1-)
   if ((%DLF.filter.spamchan == 1) && ($hiswm(channotice.spam,%txt))) DLF.Chan.SpamFilter $1-
+  if ((%txt != $1-) && ($hiswm(channotice.trivia,%txt))) DLF.Win.Filter $1-
   DLF.Chan.ControlCodes $1-
   ; Override mIRC default destination and send to channel rather than active/status windows.
   DLF.Win.Echo $event $chan $nick $1-
@@ -3963,6 +3973,9 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.ads @ --*
   DLF.hadd chantext.ads @ Use @*
   DLF.hadd chantext.ads *QNet Advanced DCC File Server*Sharing *B of stuff!*
+  DLF.hadd chantext.ads * To Request A File Type: *
+  DLF.hadd chantext.ads * To request a file, type  *
+  DLF.hadd chantext.ads * To request details, type  *
   inc %matches $hget(DLF.chantext.ads,0).item
 
   if ($hget(DLF.chantext.spam)) hfree DLF.chantext.spam
@@ -3985,6 +3998,7 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.spam *I have just finished receiving*from*have now received a total*
   DLF.hadd chantext.spam *I have just received*from*for a total of*KeepTrack*
   DLF.hadd chantext.spam *I have just received*from*leeched since*
+  DLF.hadd chantext.spam Je Viens D'envoyer: * © À: * © Total De Fichiers Partagés: * © Hier J'ai Envoyé: * Fichiers © Aujourd'hui J'ai Envoyé [à * ]: * Fichiers © OS-Limites V*
   DLF.hadd chantext.spam *Je viens juste de terminer de recevoir*de*Prenez-en un vite*
   DLF.hadd chantext.spam *Just Sent To*Filename*Slots Free*Queued*
   DLF.hadd chantext.spam *KeepTrack*by*^OmeN*
@@ -3999,6 +4013,7 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.spam *Receive Successful*Thanks for*
   DLF.hadd chantext.spam *Received*From*Size*Speed*Time*since*
   DLF.hadd chantext.spam *ROLL TIDE*Now Playing*mp3*
+  DLF.hadd chantext.spam *sent*at*to*total sent*files*yesterday*files*today*files*
   DLF.hadd chantext.spam *sent*to*at*total sent*files*yesterday*files*today*files*
   DLF.hadd chantext.spam *sets away*auto idle away*since*
   DLF.hadd chantext.spam *Thank You*for serving in*
@@ -4101,6 +4116,20 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.spam *[Mp3xBR]*
   DLF.hadd chantext.spam Thanks for serving *
   DLF.hadd chantext.spam Escribe: * !*.mp3*
+  DLF.hadd chantext.spam * packs * slots open, Record: *
+  DLF.hadd chantext.spam * Brought To You By *
+  DLF.hadd chantext.spam * XDCC Server *
+  DLF.hadd chantext.spam Total Offered: * Total Transferred: *
+  DLF.hadd chantext.spam If your server doesn't work please turn it off!
+  DLF.hadd chantext.spam Please *don*t flood our servers.
+  DLF.hadd chantext.spam Need Help with a Command type *
+  DLF.hadd chantext.spam No Flooding *Flooding is defined as *
+  DLF.hadd chantext.spam Hints & Tips *
+  DLF.hadd chantext.spam Do Not Ask For OPs *
+  DLF.hadd chantext.spam No Pornography *
+  DLF.hadd chantext.spam No Spamming *
+  DLF.hadd chantext.spam Do Not Attempt To Get Past Channel Bans *
+  DLF.hadd chantext.spam Want the FileServ Serv*ing Bot *
   inc %matches $hget(DLF.chantext.spam,0).item
 
   if ($hget(DLF.chantext.always)) hfree DLF.chantext.always
@@ -4123,6 +4152,111 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.always *::INFO:: *.*MB
   DLF.hadd chantext.always <*> *
   inc %matches $hget(DLF.chantext.always,0).item
+
+  if ($hget(DLF.chantext.fileserv)) hfree DLF.chantext.t
+  DLF.hadd chantext.fileserv #* *x [*] *
+  DLF.hadd chantext.fileserv * Bandwidth Usage * Current: *, Record: *
+  DLF.hadd chantext.fileserv * Total Offered: *, Total Transferred (since *): *
+  DLF.hadd chantext.fileserv * packs * of * slots open Queue: *, Priority queue: *
+  inc %matches $hget(DLF.chantext.always,0).item
+
+  if ($hget(DLF.chantext.trivia)) hfree DLF.chantext.trivia
+  DLF.hadd chantext.trivia Common name * ?
+  DLF.hadd chantext.trivia How * ?
+  DLF.hadd chantext.trivia If * ?
+  DLF.hadd chantext.trivia In * ?
+  DLF.hadd chantext.trivia * meaning * ?
+  DLF.hadd chantext.trivia *what* ?
+  DLF.hadd chantext.trivia When * ?
+  DLF.hadd chantext.trivia *which * ?
+  DLF.hadd chantext.trivia *who * ?
+  DLF.hadd chantext.trivia Whose * ?
+  DLF.hadd chantext.trivia Name * ?
+  DLF.hadd chantext.trivia This is * ?
+  DLF.hadd chantext.trivia KAOS *
+  DLF.hadd chantext.trivia * from what ?
+  DLF.hadd chantext.trivia * are all what ?
+  DLF.hadd chantext.trivia * is called * ?
+  DLF.hadd chantext.trivia *he starred in * ?
+  DLF.hadd chantext.trivia * of * time ?
+  DLF.hadd chantext.trivia * of ?
+  DLF.hadd chantext.trivia *: * ?
+  DLF.hadd chantext.trivia ???.*
+  DLF.hadd chantext.trivia 1st Hint: *
+  DLF.hadd chantext.trivia 2nd Hint: *
+  DLF.hadd chantext.trivia 3rd Hint: *
+  DLF.hadd chantext.trivia Times up! The answer was -> * <-
+  DLF.hadd chantext.trivia TIMES UP! *The answers were [ * ][ * ]*
+  DLF.hadd chantext.trivia NOBODY GOT ANY OF THE ANSWERS !!!
+  DLF.hadd chantext.trivia YES, *!!!  got the answer -> * <-  in * secs, and gets * Points
+  DLF.hadd chantext.trivia You got it *! The answer was "*". You got it in * seconds and are awarded * Points
+  DLF.hadd chantext.trivia Unbelievable!! * got the answer "*" in only * seconds earning * Points
+  DLF.hadd chantext.trivia That's the way *! The answer was "*". You got it in * seconds, scooping up * Points
+  DLF.hadd chantext.trivia Nice going *! The answer was "*". You got it in * seconds and receive * Points
+  DLF.hadd chantext.trivia Check out the big brain on *!! The answer was "*". You got it in * seconds and get * Points
+  DLF.hadd chantext.trivia Show 'em how it's done *! The answer was "*". You got it in * seconds for * Points
+  DLF.hadd chantext.trivia Everyone, High-5 * for getting the answer "*" and scoring * Points
+  DLF.hadd chantext.trivia Congratulations *! The answer was "*". You got it in * seconds, raising your score by * Points
+  DLF.hadd chantext.trivia Way to go *!! You answered "*" in * seconds for * Points
+  DLF.hadd chantext.trivia * wins * Points for *
+  DLF.hadd chantext.trivia * has won * in a row!! Total Points *
+  DLF.hadd chantext.trivia * in a Row !!! I Think that * is HOGGING the Quiz !!! Is Everybody Asleep!?
+  DLF.hadd chantext.trivia A Special Bonus of * Points is Awarded to * for getting * in a row!!!
+  DLF.hadd chantext.trivia *S Top * #*: *
+  DLF.hadd chantext.trivia *S Ago* Top * #*: *
+  DLF.hadd chantext.trivia This * Top * #*: *
+  DLF.hadd chantext.trivia Last * Top * #*: *
+  DLF.hadd chantext.trivia TOP* PLAYERS * #*: *
+  DLF.hadd chantext.trivia Top Player of*: *: *
+  DLF.hadd chantext.trivia BogusTrivia v*
+  DLF.hadd chantext.trivia *TrivBot2001*
+  DLF.hadd chantext.trivia *WQuizz 2*
+  DLF.hadd chantext.trivia Public Commands: .* .* & .*
+  DLF.hadd chantext.trivia Trivia Commands: *
+  DLF.hadd chantext.trivia Welcome to *, kick back and play some Trivia!!
+  DLF.hadd chantext.trivia PLAY it's what i'm here for!
+  DLF.hadd chantext.trivia Only * to go until the * Scores are reset
+  DLF.hadd chantext.trivia * Points have been added to JACKPOT totalling * Points
+  DLF.hadd chantext.trivia * JACKPOT Points *have been returned to JACKPOT
+  DLF.hadd chantext.trivia Top* Players *are Auto-Voiced
+  DLF.hadd chantext.trivia Watch for the * BONUS Questions !!!
+  DLF.hadd chantext.trivia Please report incorrect Q&A WITH Question Number & Correction to a Channel OP
+  DLF.hadd chantext.trivia If you think a Q&A is wrong, please check it at *
+  DLF.hadd chantext.trivia Please refrain from using Extreme Bad Language
+  DLF.hadd chantext.trivia For The Competitive Edge type*
+  DLF.hadd chantext.trivia PINGREPLY : * seconds *I am running on: *
+  DLF.hadd chantext.trivia Enjoy some free downloads while you play.
+  DLF.hadd chantext.trivia Please remember this is a FREE service, Please do not complain*
+  DLF.hadd chantext.trivia We feature over * Q&A !
+  DLF.hadd chantext.trivia If you think a Q&A is wrong, please leave * a msg with Q number and correct Answer.
+  DLF.hadd chantext.trivia Please report incorrect Q&A WITH Question Number & Correction to *
+
+  DLF.hadd chantext.trivia En attente de joueurs, tapez !* pour lancer le Quizz!
+  DLF.hadd chantext.trivia Le Quizz démarre dans * secondes, préparez-vous!
+  DLF.hadd chantext.trivia Les * meilleurs : 1.*
+  DLF.hadd chantext.trivia Il y a * questions dans la base.
+  DLF.hadd chantext.trivia Le délai est bientot écoulé! Une petite aide: *
+  DLF.hadd chantext.trivia Désolé, le délai est écoulé pour cette question... La réponse était: *
+  DLF.hadd chantext.trivia Le Quizz continue dans * secondes...
+  DLF.hadd chantext.trivia Prochaine question dans * secondes...*
+  DLF.hadd chantext.trivia Question: *
+  DLF.hadd chantext.trivia Vous devez taper le premier la bonne réponse avec l'orthographe correcte.
+  DLF.hadd chantext.trivia Les accents, ainsi que les articles et conjonctions en début de réponse sont optionnels *
+  DLF.hadd chantext.trivia Les grands nombres, à l'exception des années, doivent être tapés avec un espace comme séparateur des milliers *
+  DLF.hadd chantext.trivia Plus la réponse est longue, plus il y a de lettres données dans l'aide.
+  DLF.hadd chantext.trivia Tapez * pour connaitre les commandes que le Quizz reconnait
+  DLF.hadd chantext.trivia Il y a eu * questions non trouvées. Le Quizz est suspendu...*)
+  inc %matches $hget(DLF.chantext.trivia,0).item
+
+  if ($hget(DLF.chanaction.trivia)) hfree DLF.chanaction.trivia
+  DLF.hadd chanaction.trivia passes * a ice cold beer and large pizza for getting * wins!! way to go *!!!
+  DLF.hadd chanaction.trivia awards * with a +v for having over * points
+  inc %matches $hget(DLF.chanaction.trivia,0).item
+
+  if ($hget(DLF.channotice.trivia)) hfree DLF.channotice.trivia
+  DLF.hadd channotice.trivia Welcome To * Please Enjoy Your Stay. Grab Some Files Play Some Trivia & Just Have Fun.*
+  DLF.hadd channotice.trivia *'s Stats: *Points (answers) Today: * This Week: * This Month: * Total Ever: *
+  inc %matches $hget(DLF.channotice.trivia,0).item
 
   if ($hget(DLF.chantext.dlf)) hfree DLF.chantext.dlf
   DLF.hadd chantext.dlf $strip($DLF.logo) *
