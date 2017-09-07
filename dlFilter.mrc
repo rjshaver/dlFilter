@@ -278,7 +278,7 @@ on ^*:snotice:*: {
 
 
 ; ========= Events when dlFilter is enabled ==========
-#dlf_events off
+#dlf_events on
 
 ; Channel user activity
 ; join, part, quit, nick changes, kick
@@ -443,7 +443,7 @@ on *:keydown:@dlf.@find.*:*: { if ((!$keyrpt) && ($keyval == 3)) DLF.@find.CopyL
 
 ; Following is just in case groups get reset to default...
 ; Primarily for developers when e.g. script is reloaded on change by authors autoreload script
-#dlf_bootstrap on
+#dlf_bootstrap off
 on *:text:*:*: { DLF.Groups.Bootstrap }
 alias -l DLF.Groups.Bootstrap {
   if (%DLF.enabled != $null) DLF.Groups.Events
@@ -777,6 +777,7 @@ alias -l DLF.Chan.Text {
   if ($hiswm(chantext.always,%txt)) DLF.Win.Filter $1-
   if (%txt != $1-) {
     if ($hiswm(chantext.fileserv,%txt)) DLF.Win.Filter $1-
+    if (($right(%txt, 1) == ?) && ($hiswm(chantext.triviaqs,%txt))) DLF.Win.Filter $1-
     if ($hiswm(chantext.trivia,%txt)) DLF.Win.Filter $1-
     if (($space !isin %txt) && ($len(%txt) > 10) && ($left($right(%txt,2),1) == ?)) {
       DLF.Watch.Log Obfuscated trivia question
@@ -4055,6 +4056,7 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.spam *'s current status * Points this WEEK * Points this MONTH*
   DLF.hadd chantext.spam *- ??/??/????  *  Ajouté par *
   DLF.hadd chantext.spam Mode: Normal
+  DLF.hadd chantext.spam Mode: Server Priority
   DLF.hadd chantext.spam Normal
   DLF.hadd chantext.spam ø
   DLF.hadd chantext.spam *Je Vient Juste De Reçevoir * De La Pars De * Pour Un Total De * Fichier(s)*
@@ -4160,27 +4162,37 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.fileserv * packs * of * slots open Queue: *, Priority queue: *
   inc %matches $hget(DLF.chantext.always,0).item
 
+  if ($hget(DLF.chantext.triviaqs)) hfree DLF.chantext.triviaqs
+  DLF.hadd chantext.triviaqs Certain * ?
+  DLF.hadd chantext.triviaqs Common name * ?
+  DLF.hadd chantext.triviaqs Creator of * ?
+  DLF.hadd chantext.triviaqs * founded by ?
+  DLF.hadd chantext.triviaqs Give * ?
+  DLF.hadd chantext.triviaqs *how * ?
+  DLF.hadd chantext.triviaqs If * ?
+  DLF.hadd chantext.triviaqs In * ?
+  DLF.hadd chantext.triviaqs * of this * ?
+  DLF.hadd chantext.triviaqs * is * for * ?
+  DLF.hadd chantext.triviaqs * meaning * ?
+  DLF.hadd chantext.triviaqs *what* ?
+  DLF.hadd chantext.triviaqs When * ?
+  DLF.hadd chantext.triviaqs *which * ?
+  DLF.hadd chantext.triviaqs *who * ?
+  DLF.hadd chantext.triviaqs Whose * ?
+  DLF.hadd chantext.triviaqs Name * ?
+  DLF.hadd chantext.triviaqs This is * ?
+  DLF.hadd chantext.triviaqs * from what ?
+  DLF.hadd chantext.triviaqs * are all what ?
+  DLF.hadd chantext.triviaqs * is called * ?
+  DLF.hadd chantext.triviaqs *he starred in * ?
+  DLF.hadd chantext.triviaqs * say * but * say* ?
+  DLF.hadd chantext.triviaqs * of * time ?
+  DLF.hadd chantext.triviaqs * of ?
+  DLF.hadd chantext.triviaqs *: * ?
+  inc %matches $hget(DLF.chantext.triviaqs,0).item
+
   if ($hget(DLF.chantext.trivia)) hfree DLF.chantext.trivia
-  DLF.hadd chantext.trivia Common name * ?
-  DLF.hadd chantext.trivia How * ?
-  DLF.hadd chantext.trivia If * ?
-  DLF.hadd chantext.trivia In * ?
-  DLF.hadd chantext.trivia * meaning * ?
-  DLF.hadd chantext.trivia *what* ?
-  DLF.hadd chantext.trivia When * ?
-  DLF.hadd chantext.trivia *which * ?
-  DLF.hadd chantext.trivia *who * ?
-  DLF.hadd chantext.trivia Whose * ?
-  DLF.hadd chantext.trivia Name * ?
-  DLF.hadd chantext.trivia This is * ?
-  DLF.hadd chantext.trivia KAOS *
-  DLF.hadd chantext.trivia * from what ?
-  DLF.hadd chantext.trivia * are all what ?
-  DLF.hadd chantext.trivia * is called * ?
-  DLF.hadd chantext.trivia *he starred in * ?
-  DLF.hadd chantext.trivia * of * time ?
-  DLF.hadd chantext.trivia * of ?
-  DLF.hadd chantext.trivia *: * ?
+  DLF.hadd chantext.trivia KAOS *?* Answers
   DLF.hadd chantext.trivia ???.*
   DLF.hadd chantext.trivia 1st Hint: *
   DLF.hadd chantext.trivia 2nd Hint: *
@@ -4188,6 +4200,8 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.trivia Times up! The answer was -> * <-
   DLF.hadd chantext.trivia TIMES UP! *The answers were [ * ][ * ]*
   DLF.hadd chantext.trivia NOBODY GOT ANY OF THE ANSWERS !!!
+  DLF.hadd chantext.trivia You've Guessed Them All !!! *The answers were [ * ][ * ]*
+  DLF.hadd chantext.trivia Total Number Answered Correctly: * from a possible * !
   DLF.hadd chantext.trivia YES, *!!!  got the answer -> * <-  in * secs, and gets * Points
   DLF.hadd chantext.trivia You got it *! The answer was "*". You got it in * seconds and are awarded * Points
   DLF.hadd chantext.trivia Unbelievable!! * got the answer "*" in only * seconds earning * Points
@@ -4200,12 +4214,13 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.trivia Way to go *!! You answered "*" in * seconds for * Points
   DLF.hadd chantext.trivia * wins * Points for *
   DLF.hadd chantext.trivia * has won * in a row!! Total Points *
-  DLF.hadd chantext.trivia * in a Row !!! I Think that * is HOGGING the Quiz !!! Is Everybody Asleep!?
+  DLF.hadd chantext.trivia * in a Row !!! I Think that * is * !!! Is Everybody Asleep!?*
   DLF.hadd chantext.trivia A Special Bonus of * Points is Awarded to * for getting * in a row!!!
   DLF.hadd chantext.trivia *S Top * #*: *
   DLF.hadd chantext.trivia *S Ago* Top * #*: *
   DLF.hadd chantext.trivia This * Top * #*: *
   DLF.hadd chantext.trivia Last * Top * #*: *
+  DLF.hadd chantext.trivia Top JACKPOT scorers: * #*: *
   DLF.hadd chantext.trivia TOP* PLAYERS * #*: *
   DLF.hadd chantext.trivia Top Player of*: *: *
   DLF.hadd chantext.trivia BogusTrivia v*
@@ -4230,6 +4245,7 @@ alias -l DLF.CreateHashTables {
   DLF.hadd chantext.trivia We feature over * Q&A !
   DLF.hadd chantext.trivia If you think a Q&A is wrong, please leave * a msg with Q number and correct Answer.
   DLF.hadd chantext.trivia Please report incorrect Q&A WITH Question Number & Correction to *
+  DLF.hadd chantext.trivia Trivia Starting in * seconds, get ready!!!
 
   DLF.hadd chantext.trivia En attente de joueurs, tapez !* pour lancer le Quizz!
   DLF.hadd chantext.trivia Le Quizz démarre dans * secondes, préparez-vous!
